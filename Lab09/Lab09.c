@@ -1,229 +1,160 @@
-/* EE2310 Lab09. Word Processing
+/* EE231002 Lab09. Word Processing
    106061218, Cheng-En Lee
-   Date:2017/11/27
+   Date: 2017/11/27
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define LSTR 5000
+#define LSTR 5000  // Define the max paragraph length
 
-int N = 0;  // Numbers of literals of a single line.
+int N = 0;  // Number of characters per line
 
+// Function declarations
 int readline(char para[LSTR]);
-void leftAlign(char *para); 
-void center(char *para);
-void bothAlign(char *para);
-void bprint(char *para);
+void leftAlign(char para[LSTR]);
+void center(char para[LSTR]);
+void bothAlign(char para[LSTR]);
+void printJustified(char *line, int lineLength);
 
-int main(int argc, char *argv[])
+int main(int argc, char *argv[]) 
 {
-	char para[LSTR] = {'\0'};  	 // The paragragh.
-	char mode = '0';  		  	 // argv[2].
+    char para[LSTR]; // Buffer to store paragraph input
+    char mode; 		 // Variable to store alignment mode
 
-	N = atoi(argv[1]);  	  	 // Set when execute ./a.out.
-	mode = argv[2][0];     		 // Set when execute ./a.out.
-	
-	while (readline(para) != 1)  // Not EOF
-	{	
-		switch(mode)
+    // Check for correct argument count
+    if (argc != 3) 
+    {
+        printf("Usage: %s <line_length> <mode>\n", argv[0]);
+        return 1;
+    }
+
+    N = atoi(argv[1]);  // Read max line width from argument
+    mode = argv[2][0];   // Read alignment mode from argument
+
+    // Read and process paragraphs until EOF is detected
+    while (readline(para) != 1)
+        switch(mode) 
 		{
-			case 'l': leftAlign(para); break;
-			case 'c': center(para);    break;
-			case 'b': bothAlign(para); break;
-      		default : printf("illegal argument\n"); 
-                	  exit(1);
-		}
-	}
-
- 	printf("\n");
-	return 0;
+            case 'l': leftAlign(para); break; // Left alignment
+            case 'c': center(para);    break; // Center alignment
+            case 'b': bothAlign(para); break; // Both-edge alignment
+            default: printf("Invalid argument\n"); exit(1); // Handle invalid mode
+        }
+    return 0;
 }
 
-
-int readline(char para[LSTR])
+// Function to read a paragraph from input
+int readline(char para[LSTR]) 
 {
-	char ch = '0';
-  	int i = 0;			 // Index of para.
+    if (!fgets(para, LSTR, stdin)) return 1; 	// Read line, return 1 if failed
+    if (strncmp(para, "EOF", 3) == 0) return 1; // Detect end of file
+    para[strcspn(para, "\n")] = '\0';  			// Remove trailing newline character
+    return 0;
+}
 
-	while (ch != '\n')	 // Paragraghs end when changing line.
+// Function to left-align text
+void leftAlign(char para[LSTR]) 
+{
+    int i = 0, start = 0, len = strlen(para); // Initialize variables
+    while (start < len) 
 	{
-		ch = getchar();  // Read the paragragh character by character.
-		if (i < LSTR)
-			para[i++] = ch;
-	}
- 	para[i] = '\0';  	 // Set the end of a paragragh.
-
-	if ((para[0] == 'E') && (para[1] == 'O') && (para[2] == 'F'))
-		return 1;  		 // End of file.
-	else
-		return 0;		 // End of a paragragh.
+        int end = start + N; // Determine where to break line
+        if (end >= len) 
+		{ 
+			// If remaining text fits in one line
+            printf("%s\n", &para[start]);
+            break;
+        }
+        while (end > start && para[end] != ' ') 
+			end--;	// Find last space before N
+        if (end == start) 
+			end = start + N;	// No spaces found, force break
+        para[end] = '\0';		// Terminate line
+        printf("%s\n", &para[start]);
+        start = end + 1;		// Move to the next part of the paragraph
+    }
 }
 
-
-void leftAlign(char *para)
+// Function to center-align text
+void center(char para[LSTR]) 
 {
-	int i = 0;
-
- /* If the length of the paragragh is less than N,
- 	than print it right away. */
-	if (strlen(para) <= N)	
-		printf("%s\n",para);
-
- /* Normal Cases: Longer than N.*/
-	else
-	{	
-	 /* Find the last space of a single line. */
-		for (i = N; para[i] != ' '; i--);
-	 
-	 /* If the paragragh has successive blanks,
-	 	find the first of them. */
-		while (para[i-1] == ' ')
-			i--;
-
-		para[i] = '\0';				// Tag the end of the line.
-		printf("%s\n",para);		// Print.
-		while (para[i+1] == ' ')	// Find the first char of the next line.
-			i++;
-		leftAlign(para+i+1);		// Process the next line.
-	}
-}
-
-/*******center函數有問題,是錯的********/ 
-void center(char *para)
-{
-	int i = 0;
-	int k = 0;	// total blanks need in a single line.
-	int j = 0;  // index.
-
- /* If the length of the paragragh is less than N,
- 	than print it right away. */
-	if (strlen(para) <= N)	
-	{	
- 		k = N - strlen(para);	// Total blanks needed.
-		
-     /* Print the blanks in the front and end of a line,
-	 	and also the text. */
-		for (j = 1; j <= k/2; j++)
-			printf(" ");	
-		printf("%s",para);		
-		for (j = (k/2)+1; j <= k; j++)
-			printf(" ");
-		printf("\n");
-	}
-
- /* The other cases: Longer than N.*/
-	else
-	{	
-
-		for (i = N; para[i] != ' ';i--);
-	 
-	 /* If the paragragh has successive blanks,
-	 	find the first of them. */
-		while (para[i-1] == ' ')
-			i--;
-
-		para[i] = '\0';	// Tag the end of the line.
-		
-		k = N - i;		// Total spaces need in a single line.
-
-	 /* Print the blanks in the front and end of a line */
-		for (j = 1; j <= k/2; j++)
-			printf(" ");	
-		printf("%s",para);		
-		for (j = (k/2)+1; j <= k; j++)
-			printf(" ");
-		printf("\n");
-
-		while (para[i+1] == ' ')	// Find the first char of the next line.
-			i++;
-		leftAlign(para+i+1);		// Process the next line.
-	}
-
-}
-
-
-void bothAlign(char *para)
-{
- /* This function works similar to "leftAkign".
- 	but replace "printf" with "bprint". */
-
-	int i = 0;
-
-	if (strlen(para) <= N)
-		bprint(para);
-	else
+    int i = 0, start = 0, len = strlen(para);
+    while (start < len) 
 	{
-		for (i = N; para[i] != ' '; i--);
-		while (para[i-1] == ' ')
-			i--;
-		para[i] = '\0';
-		bprint(para);
-		while (para[i+1] == ' ')
-			i++;
-		bothAlign(para+i+1);
-	}
-
-}
-
-
-void bprint(char *line)
-{
-	int i = 0;				// The index of a line.
-	double k = 0;			// amount of blanks (but not successive).
-	double x = 0, y = 0;	
-
- /* x and y are used for determine whether to put an extra space.
- 	x will be assigned as the space needed in the end of a single
-	line first. */
-	x = N-strlen(line);
-	
- /* Counting the amount of not blanks between words. */	
-	for (i = 0; i < strlen(line); i++)
-		if ((line[i] == ' ') && (line[i+1] != ' '))
-			k++;
-
- /* y is the ratio of x and k (amounts of blanks). 
- 	and assign x as 0.5 for resonable frequency 
-	that extra blanks appear. In other word, the
-	two varibles brings the blanks at the end of 
-	each line to a reasonable place in the line. */	
-	y = x/k;
-	x = 0.5;
-
- /* Each line will be printed character by character.
- 	and decides whether to put extra space between words. */
-	for (i = 0; line[i] != '\0'; i++)
-	{
-	 /* Encounter a blank and the next character is not another blank. */
-		if ((line[i] == ' ') && (line[i+1] != ' '))
+        int end = start + N;
+        if (end >= len) 
 		{
-			
-		 /* Each times encounter a blank, x would plus y
-		 	until x > 1. That means it's the timing that
-			an extra spaces should appear. */
-			x+=y;
-			
-			if (x >= 1)			// Need extra space.
-			{
-				printf(" ");
-
-			 /* Reset x for next timing an extra space should appear. */
-				x -= 1;			
-			}
-			printf(" ");		// The initial space exist in the line.
-		}
-
-	 /* Encounter an character which isn't a space. */
-		else
-			printf ("%c",line[i]);
-	}
-
- /* Change lines. The next line would be processed identically. */
-	printf("\n");	
+            int padding = (N - (len - start)) / 2; // Calculate padding for centering
+            printf("%*s%s\n", padding, "", &para[start]); // Print centered text
+            break;
+        }
+        while (end > start && para[end] != ' ') 
+			end--;
+        if (end == start) 
+			end = start + N;
+        para[end] = '\0';
+        int padding = (N - (end - start)) / 2;
+        printf("%*s%s\n", padding, "", &para[start]);
+        start = end + 1;
+    }
 }
 
+// Function to both-align text
+void bothAlign(char para[LSTR]) 
+{
+    int i = 0, start = 0, len = strlen(para);
+    while (start < len) 
+	{
+        int end = start + N;
+        if (end >= len) 
+		{
+            printf("%s\n", &para[start]); // If last line, left-align it
+            break;
+        }
+        while (end > start && para[end] != ' ') 
+			end--;
+        if (end == start) 
+			end = start + N;
+        para[end] = '\0';
+        printJustified(&para[start], end - start); // Justify text
+        start = end + 1;
+    }
+}
 
+// Function to print a justified line
+void printJustified(char *line, int lineLength) 
+{
+    int spaces = 0, extraSpaces=0, i=0, j=0;
 
+    for (i = 0; i < lineLength; i++)
+        if (line[i] == ' ') spaces++; // Count spaces in the line
+    
+    if (spaces == 0) // If no spaces, print line as is
+	{ 
+        printf("%s\n", line);
+        return;
+    }
+    
+    extraSpaces = (N - lineLength) / spaces; 		// Calculate extra spaces per word
+    int extraRemainder = (N - lineLength) % spaces; // Calculate remaining spaces
+    
+    for (i = 0; i < lineLength; i++) 
+	{
+        putchar(line[i]); // Print each character
+        if (line[i] == ' ') 
+		{ 
+			// If space is encountered
+            for (j = 0; j < extraSpaces; j++) 
+				putchar(' ');	// Insert extra spaces
 
-
+            if (extraRemainder > 0) 
+			{ 
+				// Distribute remaining spaces evenly
+                putchar(' ');
+                extraRemainder--;
+            }
+        }
+    }
+    printf("\n"); // Print newline
+}
